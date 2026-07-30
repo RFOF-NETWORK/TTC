@@ -1,0 +1,152 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Reihe 1: Krypto-Blockchain (.net)</title>
+    <style>
+        :root { --neon-green: #00ff00; --dark-bg: #050505; }
+        body { background-color: var(--dark-bg); color: var(--neon-green); font-family: 'Courier New', monospace; padding: 15px; margin: 0; }
+        .section-box { background: #111; border: 1px solid #333; padding: 15px; margin-bottom: 15px; border-radius: 4px; }
+        .flex-container { display: flex; gap: 15px; flex-wrap: wrap; }
+        .flex-child { flex: 1; min-width: 280px; }
+        
+        #chartCanvas { width: 100%; height: 180px; background: #000; border: 1px dashed #444; margin-top: 10px; position: relative; }
+        .bar { position: absolute; bottom: 0; width: 15px; background: var(--neon-green); opacity: 0.7; }
+        
+        button { background: #222; color: #fff; border: 1px solid var(--neon-green); padding: 8px 12px; cursor: pointer; font-family: monospace; font-size: 11px; font-weight: bold; margin-right: 5px; margin-bottom: 5px; }
+        button:active { background: #fff; color: #000; }
+        input { background: #000; color: #fff; border: 1px solid #444; padding: 6px; width: 100%; box-sizing: border-box; margin-bottom: 8px; font-family: monospace; }
+        .balance-item { display: flex; justify-content: space-between; border-bottom: 1px dashed #222; padding: 4px 0; }
+        .back-btn { border-color: #ff3333; color: #ff3333; }
+    </style>
+</head>
+<body>
+
+    <div style="display: flex; justify-content: space-between; align-items: center;">
+        <h2>Reihe 1: Krypto-Blockchain Node (.net)</h2>
+        <button onclick="location.href='../index.html'" class="back-btn">[ ZURÜCK ZUR MATRIX ]</button>
+    </div>
+
+    <div class="section-box">
+        <h3>Autonome Balances & Wallet Settings (12-Wort BIP39 Seed)</h3>
+        <div class="balance-item"><span>Experimantal BTC (expBTC):</span> <strong id="balBtc">50.000000000</strong></div>
+        <div class="balance-item"><span>Experimantal ETH (expETH):</span> <strong id="balEth">72,000.0000</strong></div>
+        <div class="balance-item"><span>Gestakete Assets (Staking Pool):</span> <strong id="balStaked">0.0000 expAsset</strong></div>
+    </div>
+
+    <div class="flex-container">
+        <div class="flex-child section-box">
+            <h3>Allgemeines Trading (Buy / Sell)</h3>
+            <input type="number" id="tradeAmount" placeholder="Menge eingeben">
+            <button onclick="executeTrade('BUY_BTC')">[ BUY expBTC ]</button>
+            <button onclick="executeTrade('SELL_BTC')">[ SELL expBTC ]</button>
+            <button onclick="executeTrade('BUY_ETH')">[ BUY expETH ]</button>
+            <button onclick="executeTrade('SELL_ETH')">[ SELL expETH ]</button>
+        </div>
+
+        <div class="flex-child section-box">
+            <h3>Sende & Swap Mechanismen</h3>
+            <input type="text" id="targetAddress" placeholder="Empfänger Wallet-Adresse / PAW">
+            <input type="number" id="sendAmount" placeholder="Menge an Faktoren">
+            <button onclick="executeCryptoAction('SEND')">[ FX SENDEN ]</button>
+            <button onclick="executeCryptoAction('SWAP')">[ SWAP expBTC ⇆ expETH ]</button>
+            <button onclick="executeCryptoAction('MINING')" style="border-color: #ffaa00; color: #ffaa00;">[ ⛏️ EXP MINING BUTTON ]</button>
+        </div>
+    </div>
+
+    <div class="section-box">
+        <h3>EXP Trading Chart & Live Market Feed</h3>
+        <div id="chartCanvas">
+            <div class="bar" style="left:10%; height:40px;"></div>
+            <div class="bar" style="left:30%; height:80px;"></div>
+            <div class="bar" style="left:50%; height:60px;"></div>
+            <div class="bar" style="left:70%; height:120px;"></div>
+            <div class="bar" style="left:90%; height:95px;"></div>
+        </div>
+        
+        <h3 style="margin-top: 20px;">Staking Ebene (Unter dem Trading Chart)</h3>
+        <p style="font-size:12px; color:#888;">Frieren Sie Ihre experimentellen Faktoren im lokalen Kontroll-Pool ein, um Zyklen-Erträge zu erwirtschaften.</p>
+        <button onclick="executeCryptoAction('STAKE')" style="border-color:#00ffff; color:#00ffff;">[ ASSETS IN STAKING EBENE EINZAHLEN ]</button>
+        <button onclick="executeCryptoAction('UNSTAKE')">[ ASSETS AUS STAKING AUSZAHLEN ]</button>
+    </div>
+
+    <div class="section-box">
+        <h3>Tri-Chain Explorer Matrix (.net Ansicht)</h3>
+        <p style="font-size:11px; color:#666;">Zeigt die fraktalen Verschachtelungen der Blöcke 0 bis 4 an.</p>
+        <div id="explorerOutput" style="background:#000; padding:10px; max-height:200px; overflow-y:auto; font-size:11px;">
+            Lade Kettenglieder der fraktalen Matrix...
+        </div>
+    </div>
+
+    <script>
+        let balances = { btc: 50.0, eth: 72000.0, staked: 0.0 };
+
+        function updateBalanceDisplay() {
+            document.getElementById('balBtc').innerText = balances.btc.toFixed(8);
+            document.getElementById('balEth').innerText = balances.eth.toFixed(4);
+            document.getElementById('balStaked').innerText = balances.staked.toFixed(4) + " expAsset";
+        }
+
+        function executeTrade(type) {
+            let amt = parseFloat(document.getElementById('tradeAmount').value) || 0;
+            if(amt <= 0) return alert("Ungültige Menge");
+            
+            if(type === 'BUY_BTC') { balances.btc += amt; }
+            if(type === 'SELL_BTC') { if(balances.btc >= amt) balances.btc -= amt; }
+            if(type === 'BUY_ETH') { balances.eth += amt; }
+            if(type === 'SELL_ETH') { if(balances.eth >= amt) balances.eth -= amt; }
+            
+            updateBalanceDisplay();
+            writeLocalBlock("TRADE_AX", `${type} von ${amt} Faktoren ausgeführt.`);
+        }
+
+        function executeCryptoAction(action) {
+            if(action === 'MINING') {
+                balances.btc += 12.5;
+                alert("Erfolgreich Block geschürft! +12.5 expBTC verankert.");
+            }
+            if(action === 'STAKE') {
+                if(balances.eth >= 1000) { balances.eth -= 1000; balances.staked += 1000; }
+                else { alert("Nicht genügend expETH für die Staking Ebene vorhanden."); }
+            }
+            if(action === 'UNSTAKE') {
+                if(balances.staked > 0) { balances.eth += balances.staked; balances.staked = 0; }
+            }
+            if(action === 'SWAP') {
+                if(balances.btc >= 1) { balances.btc -= 1; balances.eth += 3500; }
+            }
+            updateBalanceDisplay();
+            writeLocalBlock("CRYPTO_POOL_AX", `Aktion ${action} auf Krypto-Ebene ausgeführt.`);
+        }
+
+        function writeLocalBlock(action, details) {
+            let ledger = JSON.parse(localStorage.getItem('l_ledger') || '[]');
+            let prevHash = ledger.length > 0 ? ledger[ledger.length - 1].net_hash : "00000000";
+            
+            let newBlock = {
+                index: ledger.length,
+                action: action,
+                net_hash: Math.random().toString(16).substring(2,10),
+                parentHash: prevHash,
+                details: details
+            };
+            ledger.push(newBlock);
+            localStorage.setItem('l_ledger', JSON.stringify(ledger));
+            renderLocalExplorer();
+        }
+
+        function renderLocalExplorer() {
+            let ledger = JSON.parse(localStorage.getItem('l_ledger') || '[]');
+            let html = "";
+            ledger.forEach(b => {
+                html += `<div><strong>[BLOCK #${b.index}]</strong> Reihe 1 (.net) Hash: <span style="color:#5599ff; font-weight:bold;">${b.net_hash}</span> -> ${b.details}</div>`;
+            });
+            document.getElementById('explorerOutput').innerHTML = html || "Keine Blöcke im lokalen Ledger vorhanden.";
+        }
+
+        updateBalanceDisplay();
+        renderLocalExplorer();
+    </script>
+</body>
+</html>
