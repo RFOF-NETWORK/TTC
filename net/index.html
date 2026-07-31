@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Reihe 1: Krypto-Blockchain (.net)</title>
+    <title>Reihe 1: Krypto-Blockchain Node (.net)</title>
     <style>
         :root { --neon-green: #00ff00; --dark-bg: #050505; }
         body { background-color: var(--dark-bg); color: var(--neon-green); font-family: 'Courier New', monospace; padding: 15px; margin: 0; }
@@ -17,11 +17,25 @@
         button { background: #222; color: #fff; border: 1px solid var(--neon-green); padding: 8px 12px; cursor: pointer; font-family: monospace; font-size: 11px; font-weight: bold; margin-right: 5px; margin-bottom: 5px; }
         button:active { background: #fff; color: #000; }
         input { background: #000; color: #fff; border: 1px solid #444; padding: 6px; width: 100%; box-sizing: border-box; margin-bottom: 8px; font-family: monospace; }
-        .balance-item { display: flex; justify-content: space-between; border-bottom: 1px dashed #222; padding: 4px 0; }
+        .balance-item { display: flex; justify-content: space-between; border-bottom: 1px dashed #222; padding: 6px 0; align-items: center; }
         .back-btn { border-color: #ff3333; color: #ff3333; }
+        .auth-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(5,5,5,0.95); z-index: 1000; display: flex; justify-content: center; align-items: center; flex-direction: column; }
+        .horizontal-scroll { display: flex; overflow-x: auto; gap: 15px; padding-bottom: 10px; }
+        .seed-card { background: #1a1a1a; border: 1px solid #444; padding: 10px; min-width: 280px; box-sizing: border-box; }
     </style>
 </head>
 <body>
+
+    <div id="authOverlay" class="auth-overlay">
+        <div class="section-box" style="width: 350px; text-align: center;">
+            <h3>Authentifizierung erforderlich</h3>
+            <p style="font-size: 11px; color: #888;">Bitte melden Sie sich an oder werden Sie zur Python-Webseite weitergeleitet.</p>
+            <input type="text" id="loginUser" placeholder="Benutzername">
+            <input type="password" id="loginPass" placeholder="Passwort">
+            <button onclick="handleLogin()">[ ANMELDEN ]</button>
+            <button onclick="redirectToPythonWeb()" class="back-btn">[ ZUR PYTHON-WEBSEITE ]</button>
+        </div>
+    </div>
 
     <div style="display: flex; justify-content: space-between; align-items: center;">
         <h2>Reihe 1: Krypto-Blockchain Node (.net)</h2>
@@ -29,10 +43,49 @@
     </div>
 
     <div class="section-box">
-        <h3>Autonome Balances & Wallet Settings (12-Wort BIP39 Seed)</h3>
-        <div class="balance-item"><span>Experimantal BTC (expBTC):</span> <strong id="balBtc">50.000000000</strong></div>
-        <div class="balance-item"><span>Experimantal ETH (expETH):</span> <strong id="balEth">72,000.0000</strong></div>
-        <div class="balance-item"><span>Gestakete Assets (Staking Pool):</span> <strong id="balStaked">0.0000 expAsset</strong></div>
+        <h3>Settings & Verschlüsselte Seed-Paare ($0-\infty$)</h3>
+        <p style="font-size:11px; color:#888;">Benutzername und Passwort sind änderbar; initiale Seed-Phrasen bleiben unveränderbar.</p>
+        <input type="text" id="settingsUser" placeholder="Neuer Benutzername">
+        <input type="password" id="settingsPass" placeholder="Neues Passwort">
+        <button onclick="updateCredentials()">[ CREDENTIALS ÄNDERN ]</button>
+        <hr style="border:0; border-top:1px solid #333; margin:15px 0;">
+        <input type="password" id="unlockPassInput" placeholder="Passwort zur Entschlüsselung eingeben">
+        <button onclick="unlockSeeds()">[ PHRASEN ENTSCHLÜSSELN ]</button>
+        
+        <div id="seedsContainer" style="margin-top: 15px; display:none;">
+            <div class="horizontal-scroll" id="horizontalSeedList">
+                <!-- Dynamische Scroll-Liste für Index 0 bis Unendlich -->
+            </div>
+        </div>
+        <button onclick="generateNewSeedPair()" style="margin-top:15px; border-color:#00ffff; color:#00ffff;">[ + NEUES 12&24 SEED-PAAR GENERIEREN ]</button>
+    </div>
+
+    <div class="section-box">
+        <h3>Autonome Balances & Wallet Adressen (Gesamt-Fiat: <span id="totalFiat" style="color:#fff;">0.00$</span>)</h3>
+        <div class="balance-item">
+            <span>EXP Balance: <strong id="balExp">0.00</strong></span>
+            <div>
+                <button onclick="switchAddress('EXP', '12')">[ 12er ADR ]</button>
+                <button onclick="switchAddress('EXP', '24')">[ 24er ADR ]</button>
+                <button onclick="copyActiveAddress('EXP')">[ KOPIERE AKTIVE EXP ADR ]</button>
+            </div>
+        </div>
+        <div class="balance-item">
+            <span>BTC Balance: <strong id="balBtc">0.00</strong></span>
+            <div>
+                <button onclick="switchAddress('BTC', '12')">[ 12er ADR ]</button>
+                <button onclick="switchAddress('BTC', '24')">[ 24er ADR ]</button>
+                <button onclick="copyActiveAddress('BTC')">[ KOPIERE AKTIVE BTC ADR ]</button>
+            </div>
+        </div>
+        <div class="balance-item">
+            <span>ETH Balance: <strong id="balEth">0.00</strong></span>
+            <div>
+                <button onclick="switchAddress('ETH', '12')">[ 12er ADR ]</button>
+                <button onclick="switchAddress('ETH', '24')">[ 24er ADR ]</button>
+                <button onclick="copyActiveAddress('ETH')">[ KOPIERE AKTIVE ETH ADR ]</button>
+            </div>
+        </div>
     </div>
 
     <div class="flex-container">
@@ -64,66 +117,160 @@
             <div class="bar" style="left:70%; height:120px;"></div>
             <div class="bar" style="left:90%; height:95px;"></div>
         </div>
-        
-        <h3 style="margin-top: 20px;">Staking Ebene (Unter dem Trading Chart)</h3>
-        <p style="font-size:12px; color:#888;">Frieren Sie Ihre experimentellen Faktoren im lokalen Kontroll-Pool ein, um Zyklen-Erträge zu erwirtschaften.</p>
-        <button onclick="executeCryptoAction('STAKE')" style="border-color:#00ffff; color:#00ffff;">[ ASSETS IN STAKING EBENE EINZAHLEN ]</button>
-        <button onclick="executeCryptoAction('UNSTAKE')">[ ASSETS AUS STAKING AUSZAHLEN ]</button>
-    </div>
-
-    <div class="section-box">
-        <h3>Tri-Chain Explorer Matrix (.net Ansicht)</h3>
-        <p style="font-size:11px; color:#666;">Zeigt die fraktalen Verschachtelungen der Blöcke 0 bis 4 an.</p>
-        <div id="explorerOutput" style="background:#000; padding:10px; max-height:200px; overflow-y:auto; font-size:11px;">
-            Lade Kettenglieder der fraktalen Matrix...
-        </div>
     </div>
 
     <script>
-        let balances = { btc: 50.0, eth: 72000.0, staked: 0.0 };
+        let authData = JSON.parse(localStorage.getItem('ttc_auth') || '{"username":"","password":""}');
+        let seedPairs = JSON.parse(localStorage.getItem('ttc_seeds') || '[]');
+        let balances = { exp: 0.0, btc: 0.0, eth: 0.0, fiat: 0.0 };
+        let activeAddresses = { EXP: "", BTC: "", ETH: "" };
 
-        function updateBalanceDisplay() {
-            document.getElementById('balBtc').innerText = balances.btc.toFixed(8);
-            document.getElementById('balEth').innerText = balances.eth.toFixed(4);
-            document.getElementById('balStaked').innerText = balances.staked.toFixed(4) + " expAsset";
+        function checkAuth() {
+            if(!authData.username || !authData.password) {
+                document.getElementById('authOverlay').style.display = 'flex';
+            } else {
+                document.getElementById('authOverlay').style.display = 'none';
+                if(seedPairs.length === 0) {
+                    generateNewSeedPair(true);
+                }
+                renderSeeds();
+                updateDisplays();
+            }
+        }
+
+        function redirectToPythonWeb() {
+            alert("Weiterleitung zur Python-Webseite für Benutzer- und Passwort-Erstellung...");
+            // Simulating external python web registration redirection
+            authData = { username: "PythonUser", password: "SecurePassword123" };
+            localStorage.setItem('ttc_auth', JSON.stringify(authData));
+            checkAuth();
+        }
+
+        function handleLogin() {
+            let u = document.getElementById('loginUser').value;
+            let p = document.getElementById('loginPass').value;
+            if(u === authData.username && p === authData.password) {
+                document.getElementById('authOverlay').style.display = 'none';
+            } else {
+                alert("Falscher Benutzername oder Passwort. Weiterleitung zur Python-Webseite.");
+                redirectToPythonWeb();
+            }
+        }
+
+        function updateCredentials() {
+            let newU = document.getElementById('settingsUser').value;
+            let newP = document.getElementById('settingsPass').value;
+            if(newU && newP) {
+                authData.username = newU;
+                authData.password = newP;
+                localStorage.setItem('ttc_auth', JSON.stringify(authData));
+                alert("Zugangsdaten erfolgreich aktualisiert.");
+            } else {
+                alert("Bitte Benutzername und Passwort eingeben.");
+            }
+        }
+
+        function unlockSeeds() {
+            let pInput = document.getElementById('unlockPassInput').value;
+            if(pInput === authData.password) {
+                document.getElementById('seedsContainer').style.display = 'block';
+                renderSeeds();
+            } else {
+                alert("Falsches Passwort für die Entschlüsselung!");
+            }
+        }
+
+        function generateNewSeedPair(isInitial = false) {
+            let index = seedPairs.length;
+            let v1_12 = "word1 word2 word3 word4 word5 word6 word7 word8 word9 word10 word11 word12 (Index " + index + " V1)";
+            let v2_24 = "alpha beta gamma delta epsilon zeta eta theta iota kappa lambda mu nu xi omicron pi rho sigma tau upsilon phi chi psi omega (Index " + index + " V2)";
+            
+            let pair = {
+                index: index,
+                v1: v1_12,
+                v2: v2_24,
+                addresses: {
+                    exp12: "EXP_12_ADDR_" + index,
+                    exp24: "EXP_24_ADDR_" + index,
+                    btc12: "BTC_12_ADDR_" + index,
+                    btc24: "BTC_24_ADDR_" + index,
+                    eth12: "ETH_12_ADDR_" + index,
+                    eth24: "ETH_24_ADDR_" + index
+                }
+            };
+            seedPairs.push(pair);
+            localStorage.setItem('ttc_seeds', JSON.stringify(seedPairs));
+            if(!isInitial) renderSeeds();
+            writeLocalBlock("SEED_PAIR_GEN", `Gekoppeltes Seed-Paar ${index} generiert.`);
+        }
+
+        function renderSeeds() {
+            let container = document.getElementById('horizontalSeedList');
+            let html = "";
+            seedPairs.forEach(pair => {
+                html += `
+                    <div class="seed-card">
+                        <strong>Index ${pair.index} (Gekoppelt)</strong><br><br>
+                        <em>12-Wort V1:</em><br><span style="font-size:10px;">${pair.v1}</span><br>
+                        <button onclick="navigator.clipboard.writeText('${pair.v1}')">[ 12er KOPIEREN ]</button><br><br>
+                        <em>24-Wort V2:</em><br><span style="font-size:10px;">${pair.v2}</span><br>
+                        <button onclick="navigator.clipboard.writeText('${pair.v2}')">[ 24er KOPIEREN ]</button>
+                    </div>
+                `;
+            });
+            container.innerHTML = html;
+        }
+
+        function switchAddress(net, type) {
+            if(seedPairs.length === 0) return;
+            let currentPair = seedPairs[0]; // Standardmäßig Index 0
+            if(net === 'EXP') activeAddresses.EXP = type === '12' ? currentPair.addresses.exp12 : currentPair.addresses.exp24;
+            if(net === 'BTC') activeAddresses.BTC = type === '12' ? currentPair.addresses.btc12 : currentPair.addresses.btc24;
+            if(net === 'ETH') activeAddresses.ETH = type === '12' ? currentPair.addresses.eth12 : currentPair.addresses.eth24;
+            alert(`${net} ${type}er Adresse als aktiv ausgewählt.`);
+        }
+
+        function copyActiveAddress(net) {
+            let addr = activeAddresses[net];
+            if(!addr) {
+                switchAddress(net, '12');
+                addr = activeAddresses[net];
+            }
+            navigator.clipboard.writeText(addr);
+            alert(`Aktive ${net}-Adresse kopiert: ${addr}`);
+        }
+
+        function updateDisplays() {
+            document.getElementById('balExp').innerText = balances.exp.toFixed(2);
+            document.getElementById('balBtc').innerText = balances.btc.toFixed(2);
+            document.getElementById('balEth').innerText = balances.eth.toFixed(2);
+            document.getElementById('totalFiat').innerText = balances.fiat.toFixed(2) + "$";
         }
 
         function executeTrade(type) {
             let amt = parseFloat(document.getElementById('tradeAmount').value) || 0;
             if(amt <= 0) return alert("Ungültige Menge");
-            
-            if(type === 'BUY_BTC') { balances.btc += amt; }
-            if(type === 'SELL_BTC') { if(balances.btc >= amt) balances.btc -= amt; }
-            if(type === 'BUY_ETH') { balances.eth += amt; }
-            if(type === 'SELL_ETH') { if(balances.eth >= amt) balances.eth -= amt; }
-            
-            updateBalanceDisplay();
-            writeLocalBlock("TRADE_AX", `${type} von ${amt} Faktoren ausgeführt.`);
+            if(type === 'BUY_BTC') { balances.btc += amt; balances.fiat += amt * 10; }
+            if(type === 'SELL_BTC') { if(balances.btc >= amt) { balances.btc -= amt; balances.fiat -= amt * 10; } }
+            if(type === 'BUY_ETH') { balances.eth += amt; balances.fiat += amt * 5; }
+            if(type === 'SELL_ETH') { if(balances.eth >= amt) { balances.eth -= amt; balances.fiat -= amt * 5; } }
+            updateDisplays();
+            writeLocalBlock("TRADE_AX", `${type} von ${amt} ausgeführt.`);
         }
 
         function executeCryptoAction(action) {
             if(action === 'MINING') {
-                balances.btc += 12.5;
-                alert("Erfolgreich Block geschürft! +12.5 expBTC verankert.");
+                balances.exp += 12.5;
+                balances.fiat += 125.0;
+                alert("Erfolgreich Block geschürft! +12.5 exp verankert.");
             }
-            if(action === 'STAKE') {
-                if(balances.eth >= 1000) { balances.eth -= 1000; balances.staked += 1000; }
-                else { alert("Nicht genügend expETH für die Staking Ebene vorhanden."); }
-            }
-            if(action === 'UNSTAKE') {
-                if(balances.staked > 0) { balances.eth += balances.staked; balances.staked = 0; }
-            }
-            if(action === 'SWAP') {
-                if(balances.btc >= 1) { balances.btc -= 1; balances.eth += 3500; }
-            }
-            updateBalanceDisplay();
-            writeLocalBlock("CRYPTO_POOL_AX", `Aktion ${action} auf Krypto-Ebene ausgeführt.`);
+            updateDisplays();
+            writeLocalBlock("CRYPTO_POOL_AX", `Aktion ${action} ausgeführt.`);
         }
 
         function writeLocalBlock(action, details) {
             let ledger = JSON.parse(localStorage.getItem('l_ledger') || '[]');
             let prevHash = ledger.length > 0 ? ledger[ledger.length - 1].net_hash : "00000000";
-            
             let newBlock = {
                 index: ledger.length,
                 action: action,
@@ -133,20 +280,11 @@
             };
             ledger.push(newBlock);
             localStorage.setItem('l_ledger', JSON.stringify(ledger));
-            renderLocalExplorer();
         }
 
-        function renderLocalExplorer() {
-            let ledger = JSON.parse(localStorage.getItem('l_ledger') || '[]');
-            let html = "";
-            ledger.forEach(b => {
-                html += `<div><strong>[BLOCK #${b.index}]</strong> Reihe 1 (.net) Hash: <span style="color:#5599ff; font-weight:bold;">${b.net_hash}</span> -> ${b.details}</div>`;
-            });
-            document.getElementById('explorerOutput').innerHTML = html || "Keine Blöcke im lokalen Ledger vorhanden.";
-        }
-
-        updateBalanceDisplay();
-        renderLocalExplorer();
+        window.onload = function() {
+            checkAuth();
+        };
     </script>
 </body>
 </html>
