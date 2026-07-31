@@ -14,10 +14,24 @@
         button:active { background: #fff; color: #000; }
         .back-btn { border-color: #ff3333; color: #ff3333; }
         #terminalView { background: #000; border: 1px solid #222; height: 150px; padding: 10px; overflow-y: auto; font-size: 11px; color: #fff; margin-top: 10px; }
-        .seed-box { background: #1a1a2e; border: 1px dashed var(--neon-blue); color: #fff; padding: 10px; font-size: 11px; margin-top: 5px; word-break: break-all; }
+        .auth-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(5,5,5,0.95); z-index: 1000; display: flex; justify-content: center; align-items: center; flex-direction: column; }
+        input { background: #000; color: #fff; border: 1px solid #444; padding: 6px; width: 100%; box-sizing: border-box; margin-bottom: 8px; font-family: monospace; }
+        .horizontal-scroll { display: flex; overflow-x: auto; gap: 15px; padding-bottom: 10px; }
+        .seed-card { background: #1a1a2e; border: 1px dashed var(--neon-blue); padding: 10px; min-width: 280px; box-sizing: border-box; color: #fff; }
     </style>
 </head>
 <body>
+
+    <div id="authOverlay" class="auth-overlay">
+        <div class="section-box" style="width: 350px; text-align: center;">
+            <h3>Authentifizierung erforderlich</h3>
+            <p style="font-size: 11px; color: #888;">Bitte melden Sie sich an oder werden Sie zur Python-Webseite weitergeleitet.</p>
+            <input type="text" id="loginUser" placeholder="Benutzername">
+            <input type="password" id="loginPass" placeholder="Passwort">
+            <button onclick="handleLogin()">[ ANMELDEN ]</button>
+            <button onclick="redirectToPythonWeb()" class="back-btn">[ ZUR PYTHON-WEBSEITE ]</button>
+        </div>
+    </div>
 
     <div style="display: flex; justify-content: space-between; align-items: center;">
         <h2>Reihe 2: System-Blockchain Node (.dev)</h2>
@@ -25,20 +39,23 @@
     </div>
 
     <div class="section-box">
-        <h3>System-Wallet & Tokenizer (24-Wort BIP39 Seed)</h3>
-        <p><strong>Aktiver Verzeichnis-Zustand:</strong> <span style="color:#fff;">/main/repo/root (Local Virtual File System)</span></p>
-        <div class="seed-box">
-            <strong>Generierter System-Seed (24 Wörter):</strong><br>
-            <span id="systemSeed24">wille genesis access token system node ledger chain matrix domain anchor explorer private public wallet seed...</span>
+        <h3>Verschlüsselte Settings & Gekoppelte Seed-Paare ($0-\infty$)</h3>
+        <input type="text" id="settingsUser" placeholder="Neuer Benutzername">
+        <input type="password" id="settingsPass" placeholder="Neues Passwort">
+        <button onclick="updateCredentials()">[ CREDENTIALS ÄNDERN ]</button>
+        <hr style="border:0; border-top:1px solid #333; margin:15px 0;">
+        <input type="password" id="unlockPassInput" placeholder="Passwort zur Entschlüsselung eingeben">
+        <button onclick="unlockSeeds()">[ PHRASEN ENTSCHLÜSSELN ]</button>
+
+        <div id="seedsContainer" style="margin-top: 15px; display:none;">
+            <div class="horizontal-scroll" id="horizontalSeedList"></div>
         </div>
-        <p><strong>Globaler SAW (System Access Word):</strong> <span id="sawDisplay" style="color: #fff;">SAW-8f3a9e11-GENESIS</span></p>
-        <p><strong>Lokales PAW (Personal Access Word):</strong> <span id="pawDisplay" style="color: #ffaa00;">PAW-ROOT-DEVELOPER</span></p>
+        <button onclick="generateNewSeedPair()" style="margin-top:15px; border-color:#fff; color:#fff;">[ + NEUES 12&24 SEED-PAAR GENERIEREN ]</button>
     </div>
 
     <div class="flex-container">
         <div class="flex-child section-box">
-            <h3>Lokale Terminal-Befehle (Menschliche Klicks)</h3>
-            <p style="font-size:11px; color:#666;">Führt geschützte Kernel-Zyklen innerhalb Ihres Handys aus.</p>
+            <h3>Lokale Terminal-Befehle</h3>
             <button onclick="runSystemCmd('MKDIR')">[ MKDIR /repo/src ]</button>
             <button onclick="runSystemCmd('WRITE')">[ WRITE index.html ]</button>
             <button onclick="runSystemCmd('STATUS')">[ REPO STATUS CHECK ]</button>
@@ -46,8 +63,6 @@
 
         <div class="flex-child section-box">
             <h3>Roster & Berechtigungs-Ledger</h3>
-            <p><strong>Erster registrierter Nutzer:</strong> <span style="color:#00ff00;">Admin / Developer (Genesis Master)</span></p>
-            <p>Nachfolgende Profile werden autonom als lokale Administratoren auf der `.app`-Ebene isoliert, um globale Roster-Konflikte zu vermeiden.</p>
             <button onclick="runSystemCmd('ROSTER')">[ ROSTER INTEGRITÄT PRÜFEN ]</button>
         </div>
     </div>
@@ -58,36 +73,125 @@
     </div>
 
     <script>
+        let authData = JSON.parse(localStorage.getItem('ttc_auth') || '{"username":"","password":""}');
+        let seedPairs = JSON.parse(localStorage.getItem('ttc_seeds') || '[]');
+
+        function checkAuth() {
+            if(!authData.username || !authData.password) {
+                document.getElementById('authOverlay').style.display = 'flex';
+            } else {
+                document.getElementById('authOverlay').style.display = 'none';
+                if(seedPairs.length === 0) generateNewSeedPair(true);
+                renderSeeds();
+            }
+        }
+
+        function redirectToPythonWeb() {
+            alert("Weiterleitung zur Python-Webseite...");
+            authData = { username: "PythonUser", password: "SecurePassword123" };
+            localStorage.setItem('ttc_auth', JSON.stringify(authData));
+            checkAuth();
+        }
+
+        function handleLogin() {
+            let u = document.getElementById('loginUser').value;
+            let p = document.getElementById('loginPass').value;
+            if(u === authData.username && p === authData.password) {
+                document.getElementById('authOverlay').style.display = 'none';
+            } else {
+                alert("Falsche Daten. Weiterleitung zur Python-Webseite.");
+                redirectToPythonWeb();
+            }
+        }
+
+        function updateCredentials() {
+            let newU = document.getElementById('settingsUser').value;
+            let newP = document.getElementById('settingsPass').value;
+            if(newU && newP) {
+                authData.username = newU;
+                authData.password = newP;
+                localStorage.setItem('ttc_auth', JSON.stringify(authData));
+                alert("Credentials aktualisiert.");
+            } else {
+                alert("Bitte Felder ausfüllen.");
+            }
+        }
+
+        function unlockSeeds() {
+            let pInput = document.getElementById('unlockPassInput').value;
+            if(pInput === authData.password) {
+                document.getElementById('seedsContainer').style.display = 'block';
+                renderSeeds();
+            } else {
+                alert("Falsches Passwort!");
+            }
+        }
+
+        function generateNewSeedPair(isInitial = false) {
+            let index = seedPairs.length;
+            let pair = {
+                index: index,
+                v1: "word1 word2 word3 word4 word5 word6 word7 word8 word9 word10 word11 word12 (Index " + index + " Dev V1)",
+                v2: "alpha beta gamma delta epsilon zeta eta theta iota kappa lambda mu nu xi omicron pi rho sigma tau upsilon phi chi psi omega (Index " + index + " Dev V2)"
+            };
+            seedPairs.push(pair);
+            localStorage.setItem('ttc_seeds', JSON.stringify(seedPairs));
+            if(!isInitial) renderDevLedger("SEED_PAIR_GEN", `Gekoppeltes Seed-Paar ${index} in .dev erstellt.`);
+            renderSeeds();
+        }
+
+        function renderSeeds() {
+            let container = document.getElementById('horizontalSeedList');
+            let html = "";
+            seedPairs.forEach(pair => {
+                html += `
+                    <div class="seed-card">
+                        <strong>Index ${pair.index}</strong><br><br>
+                        <em>12-Wort V1:</em><br><span style="font-size:10px;">${pair.v1}</span><br>
+                        <button onclick="navigator.clipboard.writeText('${pair.v1}')">[ 12er KOPIEREN ]</button><br><br>
+                        <em>24-Wort V2:</em><br><span style="font-size:10px;">${pair.v2}</span><br>
+                        <button onclick="navigator.clipboard.writeText('${pair.v2}')">[ 24er KOPIEREN ]</button>
+                    </div>
+                `;
+            });
+            container.innerHTML = html;
+        }
+
         function runSystemCmd(action) {
             const tv = document.getElementById('terminalView');
             let logMsg = "";
             let ledgerAction = "SYSTEM_ZUSTAND_CHANGE";
 
             if(action === 'MKDIR') {
-                logMsg = "Virtueller Ordner '/repo/src' erfolgreich via LightningFS im Handy-Speicher gemountet.";
+                logMsg = "Virtueller Ordner '/repo/src' gemountet.";
             } else if(action === 'WRITE') {
-                logMsg = "Datei 'index.html' verschlüsselt in lokale Kette geschrieben. Hash-Validierung gestartet.";
+                logMsg = "Datei 'index.html' verschlüsselt geschrieben.";
             } else if(action === 'STATUS') {
-                logMsg = "Status: COLD-Modus aktiv. Lokales PAW stimmt mit lokalem Dateisystem-Header übereinstimmen.";
+                logMsg = "Status: COLD-Modus aktiv.";
             } else if(action === 'ROSTER') {
-                logMsg = "Prüfe Master-Roster: Genesis-SAW ist unbeschädigt verankert. Keine globalen Abweichungen.";
+                logMsg = "Prüfe Master-Roster: Keine Abweichungen.";
                 ledgerAction = "ROSTER_VERIFY";
             }
 
             tv.innerHTML += `<br>> [${action}] ${logMsg}`;
             tv.scrollTop = tv.scrollHeight;
+            renderDevLedger(ledgerAction, logMsg);
+        }
 
+        function renderDevLedger(action, msg) {
             let ledger = JSON.parse(localStorage.getItem('l_ledger') || '[]');
             let prevHash = ledger.length > 0 ? ledger[ledger.length - 1].dev_hash || "00000000" : "00000000";
             ledger.push({
                 index: ledger.length,
-                action: ledgerAction,
+                action: action,
                 dev_hash: Math.random().toString(16).substring(2,10),
                 parentHash: prevHash,
-                details: logMsg
+                details: msg
             });
             localStorage.setItem('l_ledger', JSON.stringify(ledger));
         }
+
+        window.onload = function() { checkAuth(); };
     </script>
 </body>
 </html>
