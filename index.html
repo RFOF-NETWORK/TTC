@@ -15,13 +15,21 @@
         .nav-card.app { border-color: var(--neon-pink); }
         button { background: #222; color: #fff; border: 1px solid #555; padding: 10px 15px; cursor: pointer; font-family: monospace; font-weight: bold; width: 100%; margin-top: 10px; }
         button:active { background: #fff; color: #000; }
+        .python-bridge-btn { border-color: var(--neon-blue); color: var(--neon-blue); width: auto; padding: 6px 12px; font-size: 11px; margin-top: 0; }
         #terminal { background: #000; border: 1px solid #333; height: 250px; padding: 10px; overflow-y: auto; font-size: 12px; margin-top: 20px; }
+        .top-header { display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid #222; padding-bottom: 5px; margin-bottom: 15px; }
     </style>
 </head>
 <body>
 
-    <h1>GIA.Eco Matrix - Schaltzentrale</h1>
-    <p>Status: <span style="color: var(--neon-blue);">HOT / AUTONOMOUS (Serverless)</span></p>
+    <div class="top-header">
+        <div>
+            <h1>GIA.Eco Matrix - Schaltzentrale</h1>
+            <p style="margin: 0;">Status: <span style="color: var(--neon-blue);">HOT / AUTONOMOUS (Serverless)</span></p>
+        </div>
+        <!-- Der integrierte Python-Brücken-Button -->
+        <button class="python-bridge-btn" onclick="location.href='https://DEIN-PYTHON-GITHUB-USERNAME.github.io/Python-polyglotten-Monolithen-prime-Multiplikation-Base/'">[ 🐍 ZUR PYTHON-BASIS & CODEQL ]</button>
+    </div>
 
     <!-- Strukturierte Verzeichnis-Navigation -->
     <div class="grid-nav">
