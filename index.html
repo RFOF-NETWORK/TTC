@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>GIA.Eco Matrix - Central Node</title>
+    <title>GIA.Eco Matrix - Central Node (Konsistente Brücke)</title>
     <style>
         :root { --neon-green: #00ff00; --neon-blue: #00ffff; --neon-pink: #ff00ff; --dark-bg: #050505; }
         body { background-color: var(--dark-bg); color: var(--neon-green); font-family: 'Courier New', monospace; padding: 15px; margin: 0; }
@@ -25,7 +25,7 @@
     <div class="top-header">
         <div>
             <h1>GIA.Eco Matrix - Schaltzentrale</h1>
-            <p style="margin: 0;">Status: <span style="color: var(--neon-blue);">HOT / AUTONOMOUS (Serverless)</span></p>
+            <p style="margin: 0;">Status: <span style="color: var(--neon-blue);">HOT / AUTONOMOUS (.net/.dev/.app & Python CodeQL Sync)</span></p>
         </div>
         <button class="python-bridge-btn" onclick="location.href='https://RFOF-NETWORK.github.io/Python-polyglotten-Monolithen-prime-Multiplikation-Base/'">[ 🐍 ZUR PYTHON-BASIS & CODEQL ]</button>
     </div>
@@ -33,7 +33,7 @@
     <div class="grid-nav">
         <div class="nav-card net">
             <h2 style="color: var(--neon-green);">Reihe 1: .net</h2>
-            <p>Krypto-Ebene, Balances, Trading-Chart, Staking & Mining & PAW/SAW</p>
+            <p>Krypto-Ebene, Balances, Trading-Chart, Staking & Mining</p>
             <button onclick="location.href='./net/index.html'" style="border-color: var(--neon-green); color: var(--neon-green);">[ ÖFFNE KRYPTO DECK ]</button>
         </div>
         
@@ -45,13 +45,13 @@
         
         <div class="nav-card app">
             <h2 style="color: var(--neon-pink);">Reihe 3: .app</h2>
-            <p>AI-Schicht, Silent KI-Klon, Fraktale Konsens-Überwachung & AAW</p>
+            <p>AI-Schicht, Silent KI-Klon, Fraktale Konsens-Überwachung</p>
             <button onclick="location.href='./app/index.html'" style="border-color: var(--neon-pink); color: var(--neon-pink);">[ ÖFFNE AI DECK ]</button>
         </div>
     </div>
 
-    <h2>Zentrales Web-Terminal Log</h2>
-    <div id="terminal">> System initialisiert. Genesis-Blöcke 0 bis 4 mit präziser EXP-Summe geladen...</div>
+    <h2>Zentrales Web-Terminal Log & Python CodeQL Brücke</h2>
+    <div id="terminal">> System initialisiert. Repository-Einstellungen konsistent abgeglichen...<br>> Identisches Login-Modul über .net, .dev, .app & Python CodeQL verknüpft. Block-History aktiv.</div>
 
     <script>
 const genesisMatrixData = [
@@ -400,10 +400,10 @@ window.addEventListener('DOMContentLoaded', () => {
     <div style="background: #050505; border: 2px solid #00ff66; padding: 25px; width: 90%; max-width: 400px; border-radius: 6px; box-shadow: 0 0 20px rgba(0,255,102,0.3);">
         <header style="display: flex; align-items: center; gap: 10px; margin-bottom: 20px; border-bottom: 1px solid #222; padding-bottom: 10px;">
             <div style="width: 10px; height: 10px; background: #00ff66; border-radius: 50%; box-shadow: 0 0 8px #00ff66;"></div>
-            <h2 style="font-size: 0.9rem; color: #00ff66; margin: 0;">RFOF // TTC AUTHENTIFIZIERUNG</h2>
+            <h2 style="font-size: 0.9rem; color: #00ff66; margin: 0;">RFOF // TTC KONSISTENTES LOGIN & BLOCK-HISTORY</h2>
         </header>
         
-        <p style="font-size: 0.75rem; color: #888; margin-bottom: 15px;">Sicherheitssperre aktiv. Repository-Brücke erfordert Silent-Scan-Validierung.</p>
+        <p style="font-size: 0.75rem; color: #888; margin-bottom: 15px;">Repo-Settings über .net, .dev, .app & Python CodeQL synchronisiert. Identisches Login für Block-History-Tracking erforderlich.</p>
         
         <div style="margin-bottom: 10px;">
             <label style="display: block; font-size: 0.75rem; color: #00bfff; margin-bottom: 3px;">BENUTZERNAME / SAW\PAW:</label>
@@ -415,7 +415,7 @@ window.addEventListener('DOMContentLoaded', () => {
             <input type="password" id="ttcAuthPass" placeholder="Dein Passwort..." style="width: 100%; background: #000; border: 1px solid #444; color: #00ff66; padding: 8px; font-family: monospace; border-radius: 3px; box-sizing: border-box;">
         </div>
         
-        <button onclick="executeTtcGlobalLogin()" style="width: 100%; padding: 12px; background: #00ff66; color: #000; font-weight: bold; border: none; cursor: pointer; border-radius: 3px; font-family: monospace;">LOGIN & SILENT SCAN STARTEN</button>
+        <button onclick="executeTtcGlobalLogin()" style="width: 100%; padding: 12px; background: #00ff66; color: #000; font-weight: bold; border: none; cursor: pointer; border-radius: 3px; font-family: monospace;">LOGIN SYNCHRONISIEREN & BLOCK HISTORY AKTIVIEREN</button>
     </div>
 </div>
 
@@ -446,6 +446,11 @@ window.addEventListener('DOMContentLoaded', () => {
 
         if (typeof runSilentScan === 'function') {
             runSilentScan();
+        }
+        
+        const terminal = document.getElementById('terminal');
+        if(terminal) {
+            terminal.innerHTML += `<br>> [AUTH SYNC] Benutzer ${u} erfolgreich über .net / .dev / .app & Python CodeQL verifiziert. Block-History läuft konsistent.`;
         }
     }
 
