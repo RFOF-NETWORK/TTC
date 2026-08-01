@@ -10,6 +10,10 @@ Trash To Cash
 │   └── 📄 core_engine.py       <-- Zentrale Python-Datei für Seed-Generierung & Bilanz-Abgleich
 │
 ├── 📁 src/                     <-- DER SRC-ORDNER (Zentrale Source-Dateien & Komponenten)
+│   ├── pzqqet_master_node.py
+│   ├── codeql.v1.py 
+│   ├── codeql.v2.py 
+│   ├── codeql.v3.py 
 │   └── 📄 matrix_core.js       <-- Gemeinsame Logik für Ledger, UI-Sichtbarkeit und States
 │
 ├── 📁 net/                     <-- EBENE 1: DIE KRYPTO-BLOCKCHAIN (.net)
@@ -18,7 +22,7 @@ Trash To Cash
 ├── 📁 dev/                     <-- EBENE 2: DIE SYSTEM-BLOCKCHAIN (.dev)
 │   └── 📄 index.html           <-- Admin-Terminal & System-Status
 │
-└── 📁 app/                     <-- EBENE 3: DIE AI-BLOCKCHAIN (.app)
-└── 📄 index.html           <-- Silent-Matrix & Konsens-Schicht
-
+├── 📁 app/                     <-- EBENE 3: DIE AI-BLOCKCHAIN (.app)
+│   └── 📄 index.html           <-- Silent-Matrix & Konsens-Schicht
+└── pzqqet_master_node.py
 ```
