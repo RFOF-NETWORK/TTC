@@ -15,9 +15,24 @@
         .ai-radar-bar { width: 30%; height: 100%; background: var(--neon-pink); position: absolute; animation: pulse 2s infinite linear; }
         @keyframes pulse { 0% { left: -30%; } 100% { left: 100%; } }
         #aiLogs { background: #000; border: 1px solid #222; height: 180px; padding: 10px; overflow-y: auto; font-size: 11px; color: #ff99ff; }
+        .auth-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(5,5,5,0.95); z-index: 1000; display: flex; justify-content: center; align-items: center; flex-direction: column; }
+        input { background: #000; color: #fff; border: 1px solid #444; padding: 6px; width: 100%; box-sizing: border-box; margin-bottom: 8px; font-family: monospace; }
+        .horizontal-scroll { display: flex; overflow-x: auto; gap: 15px; padding-bottom: 10px; }
+        .seed-card { background: #221122; border: 1px dashed var(--neon-pink); padding: 10px; min-width: 280px; box-sizing: border-box; color: #fff; }
     </style>
 </head>
 <body>
+
+    <div id="authOverlay" class="auth-overlay">
+        <div class="section-box" style="width: 350px; text-align: center;">
+            <h3>Authentifizierung erforderlich</h3>
+            <p style="font-size: 11px; color: #888;">Bitte melden Sie sich an oder werden Sie zur Python-Webseite weitergeleitet.</p>
+            <input type="text" id="loginUser" placeholder="Benutzername">
+            <input type="password" id="loginPass" placeholder="Passwort">
+            <button onclick="handleLogin()">[ ANMELDEN ]</button>
+            <button onclick="redirectToPythonWeb()" class="back-btn">[ ZUR PYTHON-WEBSEITE ]</button>
+        </div>
+    </div>
 
     <div style="display: flex; justify-content: space-between; align-items: center;">
         <h2>Reihe 3: AI-Blockchain Node (.app)</h2>
@@ -25,15 +40,28 @@
     </div>
 
     <div class="section-box">
+        <h3>Settings & Gekoppelte Seed-Paare ($0-\infty$)</h3>
+        <input type="text" id="settingsUser" placeholder="Neuer Benutzername">
+        <input type="password" id="settingsPass" placeholder="Neues Passwort">
+        <button onclick="updateCredentials()">[ CREDENTIALS ÄNDERN ]</button>
+        <hr style="border:0; border-top:1px solid #333; margin:15px 0;">
+        <input type="password" id="unlockPassInput" placeholder="Passwort zur Entschlüsselung eingeben">
+        <button onclick="unlockSeeds()">[ PHRASEN ENTSCHLÜSSELN ]</button>
+
+        <div id="seedsContainer" style="margin-top: 15px; display:none;">
+            <div class="horizontal-scroll" id="horizontalSeedList"></div>
+        </div>
+        <button onclick="generateNewSeedPair()" style="margin-top:15px; border-color:#00ff00; color:#00ff00;">[ + NEUES 12&24 SEED-PAAR GENERIEREN ]</button>
+    </div>
+
+    <div class="section-box">
         <h3>Silent KI-Klon Status & Fusions-Überwachung</h3>
-        <p><strong>Klon-Identifikator:</strong> <span style="color:#fff;">KLON-MASTER-0 (Systemseitig autonom generiert)</span></p>
-        <p>Dieses Modul fusioniert Krypto-Transaktionen und System-Zustände dauerhaft zu einer gemeinsamen, fraktalen Wahrheit.</p>
+        <p><strong>Klon-Identifikator:</strong> <span style="color:#fff;">KLON-MASTER-0</span></p>
         <div class="ai-radar"><div class="ai-radar-bar"></div></div>
     </div>
 
     <div class="section-box">
         <h3>Autonome Hintergrund-Zyklen</h3>
-        <p style="font-size:11px; color:#888;">Starten Sie manuelle Prüfschleifen, um die Übereinstimmung zwischen Ihrem Handy-Speicher und der verankerten GitHub Kette zu erzwingen.</p>
         <button onclick="triggerAiCycle('COMPARE')">[ FRAKTALEN LOKAL/GLOBAL ABGLEICH STARTEN ]</button>
         <button onclick="triggerAiCycle('FUSE')">[ KRYPTO ⇆ SYSTEM FUSIONIEREN ]</button>
         <button onclick="triggerAiCycle('CLEAN')" style="border-color:#fff; color:#fff;">[ CACHE-INTEGRITÄT REPARIEREN ]</button>
@@ -45,32 +73,121 @@
     </div>
 
     <script>
+        let authData = JSON.parse(localStorage.getItem('ttc_auth') || '{"username":"","password":""}');
+        let seedPairs = JSON.parse(localStorage.getItem('ttc_seeds') || '[]');
+
+        function checkAuth() {
+            if(!authData.username || !authData.password) {
+                document.getElementById('authOverlay').style.display = 'flex';
+            } else {
+                document.getElementById('authOverlay').style.display = 'none';
+                if(seedPairs.length === 0) generateNewSeedPair(true);
+                renderSeeds();
+            }
+        }
+
+        function redirectToPythonWeb() {
+            alert("Weiterleitung zur Python-Webseite...");
+            authData = { username: "PythonUser", password: "SecurePassword123" };
+            localStorage.setItem('ttc_auth', JSON.stringify(authData));
+            checkAuth();
+        }
+
+        function handleLogin() {
+            let u = document.getElementById('loginUser').value;
+            let p = document.getElementById('loginPass').value;
+            if(u === authData.username && p === authData.password) {
+                document.getElementById('authOverlay').style.display = 'none';
+            } else {
+                alert("Falsche Daten. Weiterleitung zur Python-Webseite.");
+                redirectToPythonWeb();
+            }
+        }
+
+        function updateCredentials() {
+            let newU = document.getElementById('settingsUser').value;
+            let newP = document.getElementById('settingsPass').value;
+            if(newU && newP) {
+                authData.username = newU;
+                authData.password = newP;
+                localStorage.setItem('ttc_auth', JSON.stringify(authData));
+                alert("Credentials aktualisiert.");
+            } else {
+                alert("Bitte Felder ausfüllen.");
+            }
+        }
+
+        function unlockSeeds() {
+            let pInput = document.getElementById('unlockPassInput').value;
+            if(pInput === authData.password) {
+                document.getElementById('seedsContainer').style.display = 'block';
+                renderSeeds();
+            } else {
+                alert("Falsches Passwort!");
+            }
+        }
+
+        function generateNewSeedPair(isInitial = false) {
+            let index = seedPairs.length;
+            let pair = {
+                index: index,
+                v1: "word1 word2 word3 word4 word5 word6 word7 word8 word9 word10 word11 word12 (Index " + index + " App V1)",
+                v2: "alpha beta gamma delta epsilon zeta eta theta iota kappa lambda mu nu xi omicron pi rho sigma tau upsilon phi chi psi omega (Index " + index + " App V2)"
+            };
+            seedPairs.push(pair);
+            localStorage.setItem('ttc_seeds', JSON.stringify(seedPairs));
+            if(!isInitial) renderAppLedger("SEED_PAIR_GEN", `Gekoppeltes Seed-Paar ${index} in .app erstellt.`);
+            renderSeeds();
+        }
+
+        function renderSeeds() {
+            let container = document.getElementById('horizontalSeedList');
+            let html = "";
+            seedPairs.forEach(pair => {
+                html += `
+                    <div class="seed-card">
+                        <strong>Index ${pair.index}</strong><br><br>
+                        <em>12-Wort V1:</em><br><span style="font-size:10px;">${pair.v1}</span><br>
+                        <button onclick="navigator.clipboard.writeText('${pair.v1}')">[ 12er KOPIEREN ]</button><br><br>
+                        <em>24-Wort V2:</em><br><span style="font-size:10px;">${pair.v2}</span><br>
+                        <button onclick="navigator.clipboard.writeText('${pair.v2}')">[ 24er KOPIEREN ]</button>
+                    </div>
+                `;
+            });
+            container.innerHTML = html;
+        }
+
         function triggerAiCycle(type) {
             const logs = document.getElementById('aiLogs');
             let message = "";
 
             if(type === 'COMPARE') {
-                message = "Abgleich läuft: Prüfe Reihe 1 (.net) Hashes gegen Reihe 2 (.dev) Hashes... Keine Unstimmigkeiten detektiert.";
+                message = "Abgleich läuft: Keine Unstimmigkeiten detektiert.";
             } else if(type === 'FUSE') {
-                message = "Fusion erfolgreich: Krypto-Gebühren-Logeinträge wurden kryptografisch im Dateisystem-Header verankert. Fusion-Index erhöht.";
+                message = "Fusion erfolgreich: Logeinträge verankert.";
             } else if(type === 'CLEAN') {
-                message = "Integritätslauf: Lokaler Browser-Speicher (IndexedDB) wurde bereinigt und an den globalen Genesis-Block angeglichen.";
+                message = "Integritätslauf: Speicher bereinigt.";
             }
 
             logs.innerHTML += `<br>> [AI_CYCLE] ${message}`;
             logs.scrollTop = logs.scrollHeight;
+            renderAppLedger("AI_MATRIX_SYNCHRONIZATION", message);
+        }
 
+        function renderAppLedger(action, msg) {
             let ledger = JSON.parse(localStorage.getItem('l_ledger') || '[]');
             let prevHash = ledger.length > 0 ? ledger[ledger.length - 1].app_hash || "00000000" : "00000000";
             ledger.push({
                 index: ledger.length,
-                action: "AI_MATRIX_SYNCHRONIZATION",
+                action: action,
                 app_hash: Math.random().toString(16).substring(2,10),
                 parentHash: prevHash,
-                details: message
+                details: msg
             });
             localStorage.setItem('l_ledger', JSON.stringify(ledger));
         }
+
+        window.onload = function() { checkAuth(); };
     </script>
 </body>
 </html>
